@@ -95,6 +95,11 @@ options:
         default: 'tcp'
         choices: ['tcp', 'udp']
         type: str
+    timeout:
+        description:
+            - Sets the number of seconds to wait before the query times out
+        default: 10
+        type: int
 '''
 
 EXAMPLES = '''
@@ -209,6 +214,8 @@ except ImportError:
 from ansible.module_utils.basic import AnsibleModule, missing_required_lib
 from ansible.module_utils.common.text.converters import to_native
 
+DEFAULT_TIMEOUT = 10
+
 
 class RecordManager(object):
     def __init__(self, module):
@@ -252,6 +259,7 @@ class RecordManager(object):
             self.value = self.module.params['value']
 
         self.dns_rc = 0
+        self.timeout = self.module.params['timeout'] if 'timeout' in self.module.params else DEFAULT_TIMEOUT
 
     def txt_helper(self, entry):
         if entry[0] == '"' and entry[-1] == '"':
@@ -266,9 +274,9 @@ class RecordManager(object):
                 query.use_tsig(keyring=self.keyring, algorithm=self.algorithm)
             try:
                 if self.module.params['protocol'] == 'tcp':
-                    lookup = dns.query.tcp(query, self.module.params['server'], timeout=10, port=self.module.params['port'])
+                    lookup = dns.query.tcp(query, self.module.params['server'], timeout=self.timeout, port=self.module.params['port'])
                 else:
-                    lookup = dns.query.udp(query, self.module.params['server'], timeout=10, port=self.module.params['port'])
+                    lookup = dns.query.udp(query, self.module.params['server'], timeout=self.timeout, port=self.module.params['port'])
             except (dns.tsig.PeerBadKey, dns.tsig.PeerBadSignature) as e:
                 self.module.fail_json(msg='TSIG update error (%s): %s' % (e.__class__.__name__, to_native(e)))
             except (socket_error, dns.exception.Timeout) as e:
@@ -295,9 +303,9 @@ class RecordManager(object):
         response = None
         try:
             if self.module.params['protocol'] == 'tcp':
-                response = dns.query.tcp(update, self.module.params['server'], timeout=10, port=self.module.params['port'])
+                response = dns.query.tcp(update, self.module.params['server'], timeout=self.timeout, port=self.module.params['port'])
             else:
-                response = dns.query.udp(update, self.module.params['server'], timeout=10, port=self.module.params['port'])
+                response = dns.query.udp(update, self.module.params['server'], timeout=self.timeout, port=self.module.params['port'])
         except (dns.tsig.PeerBadKey, dns.tsig.PeerBadSignature) as e:
             self.module.fail_json(msg='TSIG update error (%s): %s' % (e.__class__.__name__, to_native(e)))
         except (socket_error, dns.exception.Timeout) as e:
@@ -363,9 +371,9 @@ class RecordManager(object):
 
             try:
                 if self.module.params['protocol'] == 'tcp':
-                    lookup = dns.query.tcp(query, self.module.params['server'], timeout=10, port=self.module.params['port'])
+                    lookup = dns.query.tcp(query, self.module.params['server'], timeout=self.timeout, port=self.module.params['port'])
                 else:
-                    lookup = dns.query.udp(query, self.module.params['server'], timeout=10, port=self.module.params['port'])
+                    lookup = dns.query.udp(query, self.module.params['server'], timeout=self.timeout, port=self.module.params['port'])
             except (dns.tsig.PeerBadKey, dns.tsig.PeerBadSignature) as e:
                 self.module.fail_json(msg='TSIG update error (%s): %s' % (e.__class__.__name__, to_native(e)))
             except (socket_error, dns.exception.Timeout) as e:
@@ -456,9 +464,9 @@ class RecordManager(object):
 
         try:
             if self.module.params['protocol'] == 'tcp':
-                lookup = dns.query.tcp(query, self.module.params['server'], timeout=10, port=self.module.params['port'])
+                lookup = dns.query.tcp(query, self.module.params['server'], timeout=self.timeout, port=self.module.params['port'])
             else:
-                lookup = dns.query.udp(query, self.module.params['server'], timeout=10, port=self.module.params['port'])
+                lookup = dns.query.udp(query, self.module.params['server'], timeout=self.timeout, port=self.module.params['port'])
         except (dns.tsig.PeerBadKey, dns.tsig.PeerBadSignature) as e:
             self.module.fail_json(msg='TSIG update error (%s): %s' % (e.__class__.__name__, to_native(e)))
         except (socket_error, dns.exception.Timeout) as e:
